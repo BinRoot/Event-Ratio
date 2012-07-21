@@ -1,6 +1,7 @@
 var express = require('express');
 
 var app = express.createServer(express.logger());
+app.use(express.static(__dirname + '/public'));
 
 app.get('/', function(request, response) {
   response.send('sup event handler');
