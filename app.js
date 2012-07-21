@@ -13,7 +13,7 @@ app.get('/test', function(request, response) {
 	var code = request.query['code'];	
 	var fbPath = '/oauth/access_token?' + 
    				'client_id=453762924657294' +
-   				'&redirect_uri=http://aqueous-cove-9179.herokuapp.com/' +
+   				'&redirect_uri=http://aqueous-cove-9179.herokuapp.com/test' +
  				'&client_secret=6c7d0f487d6b8916552a2d890d776e48' +
 				'&code=' + code;
 	var options = {
