@@ -1,3 +1,10 @@
 {
-	"sample": "data"
+	"male": 50,
+	"female": 30,
+	"mutuals": 4,
+	"total": 80,
+	"badges": {
+		"pregame": "high",
+		"others": ["cougar-alert", "girlfriend", "needs-DD"]
+	}
 }
