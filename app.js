@@ -9,9 +9,10 @@ var app = express.createServer(express.logger());
 app.use(express.static(__dirname + '/public'));
 
 app.get('/', function(request, response) {
-	response.send('<strong>testing</strong>');
+	response.send('<strong>event handler bitches</strong>');
 });
 
+// API endpoint to get all events
 app.get('/allevents', function(request, response) {
 	var token_query = request.query['access_token'];
 	console.log('token_query is '+token_query);
@@ -72,6 +73,7 @@ function getEvents(access_token, response) {
 	}).end();
 }
 
+// API endpoint for a single event
 app.get('/event/:id', function(request, response) {
 	var id = request.params['id'];
 	var access_token = request.query['access_token'];
@@ -102,7 +104,7 @@ app.get('/event/:id', function(request, response) {
 			var data = JSON.parse(result).data;
 
 			var name, time, location;
-			var attending = 0, maybe = 0, declined = 0, invited = 0, male = 0, female = 0, mutuals = 0, numSingle = 0, myAge;
+			var attending = 0, maybe = 0, declined = 0, invited = 0, male = 0, female = 0, mutuals = 0, numSingle = 0, numRelationship = 0, myAge;
 			var ages = [];
 
 			for(var k = 0; k < data.length; k++) {
@@ -140,6 +142,8 @@ app.get('/event/:id', function(request, response) {
 						var relationship = currUser['relationship_status'];
 						if(relationship !== null && relationship === 'Single') {
 							numSingle++;
+						} else if(relationship !== null && relationship !== 'Single') {
+							numRelationship++;
 						}
 					}
 				} else if(currResultsName === 'basic_info_query') {
@@ -265,7 +269,7 @@ app.get('/event/:id', function(request, response) {
 				}
 			}
 
-			// success kid (single)
+			// success kid (single) / third wheel
 			if(invited !== 0) {
 				var singleRatio = numSingle / invited;
 				if(singleRatio > .5) {
@@ -273,6 +277,13 @@ app.get('/event/:id', function(request, response) {
 						'id': 'successKid',
 						'name': 'Success Kid',
 						'description': Math.floor(singleRatio * 100) + '% of invitees are single.'
+					});
+				}
+				if(numRelationship > .5) {
+					badges.push({
+						'id': 'thirdWheel',
+						'name': 'Third Wheel',
+						'description': 'Third wheel much? ' + numRelationship + ' of the guests are not single.'
 					});
 				}
 			}
@@ -300,6 +311,8 @@ app.get('/event/:id', function(request, response) {
 	}).end();
 
 });
+
+
 
 function calcAge(birthdate) {
 	if(birthdate !== null) {
