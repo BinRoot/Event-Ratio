@@ -17,7 +17,7 @@ app.get('/allevents', function(request, response) {
 	var code = request.query['code'];	
 	var fbPath = '/oauth/access_token?' + 
    				'client_id=453762924657294' +
-   				'&redirect_uri=' + HEROKU_URL +
+   				'&redirect_uri=' + LOCAL_URL +
  				'&client_secret=6c7d0f487d6b8916552a2d890d776e48' +
  				'&code=' + code;
 	var options = {
@@ -70,29 +70,42 @@ app.get('/event/:id', function(request, response) {
 	var output = {};
 
 	// FQL query
+	var fqlQueries = {
+		'query1': 'SELECT uid, rsvp_status FROM event_member WHERE eid=' + id,
+		'query2': 'SELECT sex FROM user WHERE uid IN (SELECT uid FROM #query1)',
+	};
 	var eventReqOption = {
 		host: 'graph.facebook.com',
 		port: 443,
-		path: '/fql?q=SELECT+sex+FROM+user+WHERE+uid+IN+(SELECT+uid+FROM+event_member+WHERE+eid=' + id + ')' + 
+		path: '/fql?q=' + (JSON.stringify(fqlQueries)).replace(/\ /g, '+') + 
 				'&access_token=' + access_token
 	};
+	console.log('path is '+eventReqOption.path);
 	http.request(eventReqOption, function(res) {
 		var result = '';
 		res.on('data', function(chunk) {
 			result += chunk;
 		});
 		res.on('end', function() {
+			console.log('fqlresult is '+result);
+			var data = JSON.parse(result).data;
+			var results1 = data[0].fql_result_set;
+			var results2 = data[1].fql_result_set;
+
+			// male/female 
 			var male = 0;
 			var female = 0;
-			var data = JSON.parse(result).data;
-			for(var i = 0; i < data.length; i++) {
-				var gender = data[i].sex;
+			for(var i = 0; i < results2.length; i++) {
+				var gender = results2[i].sex;
 				if(gender === 'male') {
 					male++;
 				} else if(gender === 'female') {
 					female++;
 				}
 			}
+
+			// invited/attending/maybe
+
 			response.send({
 				'male': male,
 				'female': female
