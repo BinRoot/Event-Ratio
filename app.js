@@ -172,100 +172,15 @@ app.get('/event/:id', function(request, response) {
 				'declined': declined,
 				'mutuals': mutuals,
 				'ages': ages,
-				'averageAge': averageAge
+				'averageAge': averageAge,
+				'badges': []
 			});
 
 			// response.send(result);
 		})
 	}).end();
 
-	// var eventReqOption = {
-	// 	host: 'graph.facebook.com',
-	// 	port: 443,
-	// 	path: '/' + id + '?access_token=' + access_token
-	// };
-	// // get name, start time, location
-	// http.request(eventReqOption, function(res) {
-	// 	var graphResult = '';
-	// 	res.on('data', function(chunk) {
-	// 		graphResult += chunk;
-	// 	});
-	// 	res.on('end', function() {
-	// 		var eventData = JSON.parse(graphResult);
-	// 		output['name'] = eventData['name'];
-	// 		output['time'] = eventData['start_time'];
-	// 		output['location'] = eventData['location'];
-
-	// 		// get attending list
-	// 		var attendingReqOption = {
-	// 			host: 'graph.facebook.com',
-	// 			port: 443,
-	// 			path: '/' + id + '/attending?access_token=' + access_token
-	// 		};
-	// 		http.request(attendingReqOption, function(attendingResponse) {
-	// 			var attendingResult = '';
-	// 			attendingResponse.on('data', function(chunk) {
-	// 				attendingResult += chunk;
-	// 			});
-	// 			attendingResponse.on('end', function() {
-	// 				console.log('after attendingResult ends, attendingResult is '+attendingResult);
-	// 				var attending = JSON.parse(attendingResult);
-	// 				parseAttendingData(attending, response);
-	// 			});
-	// 		}).end();
-	// 	});
-	// }).end();
 });
-
-function parseAttendingData(data, response) {
-	var people = data.data;
-	var batch = [];
-	for(var i = 0; i < people.length; i++) {
-		batch.push({
-			'method': 'GET',
-			'relative_url': people[i].id
-		});
-	}
-	var options = {
-		host: 'graph.facebook.com',
-		port: 443,
-		path: '/?access_token=' + access_token,
-		method: 'POST'
-	};
-	var postData = 'batch='+JSON.stringify(batch);
-	console.log('batch data is '+postData);
-	// get batch data for attending list
-	var httpRequest = http.request(options, function(postResponse) {
-		var result = '';
-		postResponse.on('data', function(chunk) {
-			result += chunk;
-		});
-		// actually get the male/female counts
-		postResponse.on('end', function() {
-			console.log('attendees list is '+result);
-			var attendees = JSON.parse(result);
-
-			var male = 0;
-			var female = 0;
-			for(var i = 0; i < attendees.length; i++) {
-				var currAttendee = attendees[i];
-				var info = JSON.parse(currAttendee.body);
-				if(info['gender'] === 'male') {
-					male++;
-				} else if(info['gender'] === 'female') {
-					female++;
-				}
-			}
-			var output = {
-				'male': male,
-				'female': female
-			};
-			response.send(output);
-		});
-	});
-	httpRequest.write(postData);
-	httpRequest.end();
-} 
 
 app.get('/fetch', function(req, res) {
 
