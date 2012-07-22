@@ -82,7 +82,8 @@ app.get('/event/:id', function(request, response) {
 		'rsvp_query': 'SELECT uid, rsvp_status FROM event_member WHERE eid=' + id,
 		'person_info_query': 'SELECT sex, birthday_date FROM user WHERE uid IN (SELECT uid FROM #rsvp_query WHERE rsvp_status = \'attending\')',
 		'basic_info_query': 'SELECT name, start_time, location FROM event WHERE eid=' + id,
-		'mutuals_query': 'SELECT uid1, uid2 FROM friend WHERE uid1 = me() AND uid2 IN (SELECT uid FROM #rsvp_query WHERE rsvp_status = \'attending\')'
+		'mutuals_query': 'SELECT uid1, uid2 FROM friend WHERE uid1 = me() AND uid2 IN (SELECT uid FROM #rsvp_query WHERE rsvp_status = \'attending\')',
+		'my_info_query': 'SELECT birthday_date FROM user WHERE uid = me()'
 	};
 	var eventReqOption = {
 		host: 'graph.facebook.com',
@@ -101,7 +102,7 @@ app.get('/event/:id', function(request, response) {
 			var data = JSON.parse(result).data;
 
 			var name, time, location;
-			var attending = 0, maybe = 0, declined = 0, invited = 0, male = 0, female = 0, mutuals = 0;
+			var attending = 0, maybe = 0, declined = 0, invited = 0, male = 0, female = 0, mutuals = 0, myAge;
 			var ages = [];
 
 			for(var k = 0; k < data.length; k++) {
@@ -131,15 +132,10 @@ app.get('/event/:id', function(request, response) {
 							female++;
 						}
 
-						var birthdate = currUser['birthday_date'];
-						if(birthdate !== null) {
-							var bdaySplit = birthdate.split('/');
-							if(bdaySplit.length === 3) {
-								var thenDate = new Date(bdaySplit[2], bdaySplit[0], bdaySplit[1]);
-								var nowDate = Date.now();
-								var age = Math.floor((nowDate - thenDate) / 31557600000);
-								ages.push(age);
-							}
+
+						var age = calcAge(currUser['birthday_date']);
+						if(age !== null) {
+							ages.push(age);
 						}
 					}
 				} else if(currResultsName === 'basic_info_query') {
@@ -148,16 +144,59 @@ app.get('/event/:id', function(request, response) {
 					time = currResults[0]['start_time'];
 					location = currResults[0]['location'];
 				} else if(currResultsName === 'mutuals_query') {
+					// mutuals
 					mutuals = currResults.length;
+				} else if(currResultsName === 'my_info_query') {
+					// my info
+					var myAge = calcAge(currResults[0]['birthday_date']);
 				}
 			}
 
 			// average out age
 			var averageAge = 0;
-			for(var i = 0; i < ages.length; i++) {
-				averageAge += ages[i];
+			if(ages.length > 0) {
+				for(var i = 0; i < ages.length; i++) {
+					averageAge += ages[i];
+				}
+				averageAge = Math.round(averageAge / ages.length);
 			}
-			averageAge = Math.round(averageAge / ages.length);
+
+			/*** BADGES ***/
+			var badges = [];
+
+			// gender ratio
+			var genderRatio = female/male;
+			if(genderRatio < .5) {
+				badges.push({
+					'id': 'sausageFest',
+					'name': 'Sausagefest',
+					'description': 'Do you work at a tech company? There are '+male+' dudes and only '+female+' chicks at this event.'
+				});
+			} else if(genderRatio > 1.5) {
+				badges.push({
+					'id': 'girlsNight',
+					'name': 'Girl\'s Night!',
+					'description': 'All the single ladies... now put your hands up! There are '+female+' girls and only '+male+' boys coming to this event.'
+				});
+			}
+
+			// cougar/pedobar
+			if(myAge !== null && averageAge !== 0) {
+				var ageDiff = averageAge - myAge;
+				if(ageDiff > 3) {
+					badges.push({
+						'id': 'cougar',
+						'name': 'Cougar Alert!',
+						'description': 'Be on the lookout! The average age at this event is ' + ageDiff + ' years more than your age.'
+					});
+				} else if(ageDiff < -3) {
+					badges.push({
+						'id': 'pedobear',
+						'name': 'Pedobear',
+						'description': 'Why don\'t you take a seat right over there? The average age at this event is ' + ageDiff + ' years younger than you.'
+					});
+				}
+			}
 
 			// send final result object
 			response.send({
@@ -173,7 +212,7 @@ app.get('/event/:id', function(request, response) {
 				'mutuals': mutuals,
 				'ages': ages,
 				'averageAge': averageAge,
-				'badges': []
+				'badges': badges
 			});
 
 			// response.send(result);
@@ -181,6 +220,19 @@ app.get('/event/:id', function(request, response) {
 	}).end();
 
 });
+
+function calcAge(birthdate) {
+	if(birthdate !== null) {
+		var bdaySplit = birthdate.split('/');
+		if(bdaySplit.length === 3) {
+			var thenDate = new Date(bdaySplit[2], bdaySplit[0], bdaySplit[1]);
+			var nowDate = Date.now();
+			var age = Math.floor((nowDate - thenDate) / 31557600000);
+			return age;
+		}
+	}
+	return null;
+}
 
 app.get('/fetch', function(req, res) {
 
