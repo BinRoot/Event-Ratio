@@ -1,10 +1,24 @@
 {
+	"name": "Test Event",
+	"time": "2012-07-14T22:00:00",
+	"location": "My hizzouse",
 	"male": 50,
 	"female": 30,
+	"invited": 80,
+	"attending": 20,
+	"maybe":20,
+	"decline":40,
 	"mutuals": 4,
-	"total": 80,
-	"badges": {
-		"pregame": "high",
-		"others": ["cougar-alert", "girlfriend", "needs-DD"]
-	}
+	"ages": [8, 9, 10, 11, 12, 12, 12, 12, 12, 12, 12, 12, 13, 14],
+	"averageAge": 12,
+	"badges": [
+		{
+			"name": "sausageFest",
+			"description": "There's gonna be a lot of cock"
+		},
+		{
+			"name": "pedoBear",
+			"description": "A lot of tiny cocks"
+		}
+	]
 }
