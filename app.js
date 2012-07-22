@@ -6,14 +6,21 @@ var app = express.createServer(express.logger());
 app.use(express.static(__dirname + '/public'));
 
 app.get('/', function(request, response) {
-	response.send('sup event handler');
+	response.send('<strong>testing</strong>');
+});
+
+app.get('/jasdev', function(request, response) {
+	var thing = 5;
+	var param = parseInt(request.query['test']);
+	var frank = request.query['othertest'];
+	response.send('<strong> hello world jasdev</strong> ' + (thing + param) + frank);
 });
 
 app.get('/test', function(request, response) {
 	var code = request.query['code'];	
 	var fbPath = '/oauth/access_token?' + 
    				'client_id=453762924657294' +
-   				'&redirect_uri=http://aqueous-cove-9179.herokuapp.com/test' +
+   				'&redirect_uri=http://localhost:5000/data' +
  				'&client_secret=6c7d0f487d6b8916552a2d890d776e48' +
 				'&code=' + code;
 	var options = {
