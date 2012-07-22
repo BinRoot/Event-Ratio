@@ -17,7 +17,7 @@ app.get('/allevents', function(request, response) {
 	var code = request.query['code'];	
 	var fbPath = '/oauth/access_token?' + 
    				'client_id=453762924657294' +
-   				'&redirect_uri=' + LOCAL_URL +
+   				'&redirect_uri=' + HEROKU_URL +
  				'&client_secret=6c7d0f487d6b8916552a2d890d776e48' +
  				'&code=' + code;
 	var options = {
@@ -105,10 +105,27 @@ app.get('/event/:id', function(request, response) {
 			}
 
 			// invited/attending/maybe
+			var attending = 0, maybe = 0, declined = 0, invited = 0;
+			for(var i = 0; i < results1.length; i++) {
+				var currResponse = results1[i].rsvp_status;
+				if(currResponse === 'attending') {
+					attending++;
+				} else if(currResponse === 'unsure') {
+					maybe++;
+				} else if(currResponse === 'declined') {
+					declined++;
+				}
+				invited++;
+			}
 
+			// send final result object
 			response.send({
 				'male': male,
-				'female': female
+				'female': female,
+				'invited': invited,
+				'attending': attending,
+				'maybe': maybe,
+				'declined': declined
 			});
 		})
 	}).end();
