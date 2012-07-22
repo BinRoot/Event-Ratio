@@ -17,7 +17,7 @@ app.get('/allevents', function(request, response) {
 	var code = request.query['code'];	
 	var fbPath = '/oauth/access_token?' + 
    				'client_id=453762924657294' +
-   				'&redirect_uri=' + LOCAL_URL +
+   				'&redirect_uri=' + HEROKU_URL +
  				'&client_secret=6c7d0f487d6b8916552a2d890d776e48' +
  				'&code=' + code;
 	var options = {
