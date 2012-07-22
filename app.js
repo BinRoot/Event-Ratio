@@ -231,14 +231,32 @@ app.get('/event/:id', function(request, response) {
 				});
 			}
 
-			// maybe
+			// maybe/anyone home/no show
 			if(invited !== 0) {
 				var maybeRatio = maybe/invited;
 				if(maybeRatio > .5) {
 					badges.push({
 						'id': 'attendingMaybe',
 						'name': 'Attending Maybe?',
-						'description': 'Hey I just met you, and this is crazy... But here\'s my event, some come to it maybe? ' + maybeRatio + '% of those invited have responded with "Maybe."'
+						'description': 'Hey I just met you, and this is crazy... But here\'s my event, some come to it maybe? ' + Math.floor(maybeRatio * 100) + '% of those invited have responded with "Maybe."'
+					});
+				}
+
+				var responseRatio = (attending + declined + maybe) / invited;
+				if(responseRatio < .25) {
+					badges.push({
+						'id': 'anyoneHome',
+						'name': 'Anyone Home?',
+						'description': 'Is anybody there? Only ' + Math.floor(responseRatio * 100) + '% of invited guests have responded to the invite.'
+					});
+				}
+
+				var declineRatio = declined/invited;
+				if(declineRatio > .5) {
+					badges.push({
+						'id': 'noShow',
+						'name': 'No Show',
+						'description': Math.floor(declineRatio * 100) + '% of invitees have declined this event :('
 					});
 				}
 			}
