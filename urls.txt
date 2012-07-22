@@ -1,0 +1,9 @@
+https://www.facebook.com/dialog/oauth?
+    client_id=453762924657294
+   &redirect_uri=http://aqueous-cove-9179.herokuapp.com/test
+   &state=uniquestring
+
+   https://www.facebook.com/dialog/oauth?
+    client_id=453762924657294
+   &redirect_uri=http://localhost:5000/allevents
+   &scope=user_birthday,friends_birthday,user_events,friends_events,user_relationships,friends_relationships,user_relationship_details,friends_relationship_details&state=uniquestring
