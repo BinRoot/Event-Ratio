@@ -71,8 +71,9 @@ app.get('/event/:id', function(request, response) {
 
 	// FQL query
 	var fqlQueries = {
-		'query1': 'SELECT uid, rsvp_status FROM event_member WHERE eid=' + id,
-		'query2': 'SELECT sex FROM user WHERE uid IN (SELECT uid FROM #query1)',
+		'rsvp_query': 'SELECT uid, rsvp_status FROM event_member WHERE eid=' + id,
+		'gender_query': 'SELECT sex FROM user WHERE uid IN (SELECT uid FROM #rsvp_query)',
+		'basic_info_query': 'SELECT name, start_time, location FROM event WHERE eid=' + id
 	};
 	var eventReqOption = {
 		host: 'graph.facebook.com',
@@ -89,37 +90,49 @@ app.get('/event/:id', function(request, response) {
 		res.on('end', function() {
 			console.log('fqlresult is '+result);
 			var data = JSON.parse(result).data;
-			var results1 = data[0].fql_result_set;
-			var results2 = data[1].fql_result_set;
 
-			// male/female 
-			var male = 0;
-			var female = 0;
-			for(var i = 0; i < results2.length; i++) {
-				var gender = results2[i].sex;
-				if(gender === 'male') {
-					male++;
-				} else if(gender === 'female') {
-					female++;
-				}
-			}
+			var name, time, location;
+			var attending = 0, maybe = 0, declined = 0, invited = 0, male = 0, female = 0;
 
-			// invited/attending/maybe
-			var attending = 0, maybe = 0, declined = 0, invited = 0;
-			for(var i = 0; i < results1.length; i++) {
-				var currResponse = results1[i].rsvp_status;
-				if(currResponse === 'attending') {
-					attending++;
-				} else if(currResponse === 'unsure') {
-					maybe++;
-				} else if(currResponse === 'declined') {
-					declined++;
+			for(var k = 0; k < data.length; k++) {
+				var currResultsName = data[k].name;
+				var currResults = data[k].fql_result_set;
+				if(currResultsName === 'rsvp_query') {
+					// invited/attending/maybe
+					for(var i = 0; i < currResults.length; i++) {
+						var currResponse = currResults[i].rsvp_status;
+						if(currResponse === 'attending') {
+							attending++;
+						} else if(currResponse === 'unsure') {
+							maybe++;
+						} else if(currResponse === 'declined') {
+							declined++;
+						}
+						invited++;
+					}
+				} else if(currResultsName === 'gender_query') {
+					// male/female 
+					for(var i = 0; i < currResults.length; i++) {
+						var gender = currResults[i].sex;
+						if(gender === 'male') {
+							male++;
+						} else if(gender === 'female') {
+							female++;
+						}
+					}
+				} else if(currResultsName === 'basic_info_query') {
+					// basic info
+					name = currResults[0]['name'];
+					time = currResults[0]['start_time'];
+					location = currResults[0]['location'];
 				}
-				invited++;
 			}
 
 			// send final result object
 			response.send({
+				'name': name,
+				'time': time,
+				'location': location,
 				'male': male,
 				'female': female,
 				'invited': invited,
