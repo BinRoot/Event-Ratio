@@ -198,6 +198,24 @@ app.get('/event/:id', function(request, response) {
 				}
 			}
 
+			// social butterfly/SAP
+			if(attending !== 0) {
+				var mutualRatio = mutuals/attending;
+				if(mutualRatio > .75) {
+					badges.push({
+						'id': 'socialButterfly',
+						'name': 'Social Butterfly',
+						'description': 'Are\'t you gonna be popular! ' + Math.floor(mutualRatio * 100) + '% of the attendees are your friends.'
+					});
+				} else if(mutualRatio < .25) {
+					badges.push({
+						'id': 'SAP',
+						'name': 'Socially Awkward Penguin',
+						'description': 'Get your one-liners ready. You\'re only friends with ' + Math.floor(mutualRatio * 100) + '% of the attendees.'
+					});
+				}
+			}
+
 			// send final result object
 			response.send({
 				'name': name,
