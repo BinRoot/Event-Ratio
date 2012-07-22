@@ -69,46 +69,123 @@ app.get('/event/:id', function(request, response) {
 	var id = request.params['id'];
 	var output = {};
 
+	// FQL query
 	var eventReqOption = {
 		host: 'graph.facebook.com',
 		port: 443,
-		path: '/' + id + '?access_token=' + access_token
+		path: '/fql?q=SELECT+sex+FROM+user+WHERE+uid+IN+(SELECT+uid+FROM+event_member+WHERE+eid=' + id + ')' + 
+				'&access_token=' + access_token
 	};
-	// get name, start time, end time, location
 	http.request(eventReqOption, function(res) {
-		var graphResult = '';
+		var result = '';
 		res.on('data', function(chunk) {
-			graphResult += chunk;
+			result += chunk;
 		});
 		res.on('end', function() {
-			var eventData = JSON.parse(graphResult);
-			output['name'] = eventData['name'];
-			output['start_time'] = eventData['start_time'];
-			output['end_time'] = eventData['end_time'];
-			output['location'] = eventData['location'];
-
-			// get attending list
-			var attendingReqOption = {
-				host: 'graph.facebook.com',
-				port: 443,
-				path: '/' + id + '/attending?access_token=' + access_token
-			};
-			http.request(attendingReqOption, function(attendingResponse) {
-				var attendingResult = '';
-				attendingResponse.on('data', function(chunk) {
-					attendingResult += chunk;
-				});
-				attendingResponse.on('end', function() {
-					var attending = JSON.parse(attendingResponse);
-					parseAttendingData(attending, response);
-				});
-			}).end();
-		});
+			var male = 0;
+			var female = 0;
+			var data = JSON.parse(result).data;
+			for(var i = 0; i < data.length; i++) {
+				var gender = data[i].sex;
+				if(gender === 'male') {
+					male++;
+				} else if(gender === 'female') {
+					female++;
+				}
+			}
+			response.send({
+				'male': male,
+				'female': female
+			});
+		})
 	}).end();
+
+	// var eventReqOption = {
+	// 	host: 'graph.facebook.com',
+	// 	port: 443,
+	// 	path: '/' + id + '?access_token=' + access_token
+	// };
+	// // get name, start time, location
+	// http.request(eventReqOption, function(res) {
+	// 	var graphResult = '';
+	// 	res.on('data', function(chunk) {
+	// 		graphResult += chunk;
+	// 	});
+	// 	res.on('end', function() {
+	// 		var eventData = JSON.parse(graphResult);
+	// 		output['name'] = eventData['name'];
+	// 		output['time'] = eventData['start_time'];
+	// 		output['location'] = eventData['location'];
+
+	// 		// get attending list
+	// 		var attendingReqOption = {
+	// 			host: 'graph.facebook.com',
+	// 			port: 443,
+	// 			path: '/' + id + '/attending?access_token=' + access_token
+	// 		};
+	// 		http.request(attendingReqOption, function(attendingResponse) {
+	// 			var attendingResult = '';
+	// 			attendingResponse.on('data', function(chunk) {
+	// 				attendingResult += chunk;
+	// 			});
+	// 			attendingResponse.on('end', function() {
+	// 				console.log('after attendingResult ends, attendingResult is '+attendingResult);
+	// 				var attending = JSON.parse(attendingResult);
+	// 				parseAttendingData(attending, response);
+	// 			});
+	// 		}).end();
+	// 	});
+	// }).end();
 });
 
 function parseAttendingData(data, response) {
-	response.send(JSON.stringify(data));
+	var people = data.data;
+	var batch = [];
+	for(var i = 0; i < people.length; i++) {
+		batch.push({
+			'method': 'GET',
+			'relative_url': people[i].id
+		});
+	}
+	var options = {
+		host: 'graph.facebook.com',
+		port: 443,
+		path: '/?access_token=' + access_token,
+		method: 'POST'
+	};
+	var postData = 'batch='+JSON.stringify(batch);
+	console.log('batch data is '+postData);
+	// get batch data for attending list
+	var httpRequest = http.request(options, function(postResponse) {
+		var result = '';
+		postResponse.on('data', function(chunk) {
+			result += chunk;
+		});
+		// actually get the male/female counts
+		postResponse.on('end', function() {
+			console.log('attendees list is '+result);
+			var attendees = JSON.parse(result);
+
+			var male = 0;
+			var female = 0;
+			for(var i = 0; i < attendees.length; i++) {
+				var currAttendee = attendees[i];
+				var info = JSON.parse(currAttendee.body);
+				if(info['gender'] === 'male') {
+					male++;
+				} else if(info['gender'] === 'female') {
+					female++;
+				}
+			}
+			var output = {
+				'male': male,
+				'female': female
+			};
+			response.send(output);
+		});
+	});
+	httpRequest.write(postData);
+	httpRequest.end();
 } 
 
 app.get('/fetch', function(req, res) {
