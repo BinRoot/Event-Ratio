@@ -1,6 +1,7 @@
 var express = require('express');
 var http = require('https');
 var qs = require('querystring');
+var access_token = '';
 
 var app = express.createServer(express.logger());
 app.use(express.static(__dirname + '/public'));
@@ -16,13 +17,13 @@ app.get('/jasdev', function(request, response) {
 	response.send('<strong> hello world jasdev</strong> ' + (thing + param) + frank);
 });
 
-app.get('/test', function(request, response) {
+app.get('/allevents', function(request, response) {
 	var code = request.query['code'];	
 	var fbPath = '/oauth/access_token?' + 
    				'client_id=453762924657294' +
-   				'&redirect_uri=http://localhost:5000/data' +
+   				'&redirect_uri=http://localhost:5000/allevents' +
  				'&client_secret=6c7d0f487d6b8916552a2d890d776e48' +
-				'&code=' + code;
+ 				'&code=' + code;
 	var options = {
 	    host: 'graph.facebook.com',
 	    port: 443,
@@ -38,13 +39,13 @@ app.get('/test', function(request, response) {
 		});
 		res.on('end', function() {
 			var returns = qs.parse(str);
-			var access_token = returns['access_token'];
+			access_token = returns['access_token'];
 			
 			// actually make graph requests
 			var graphOptions = {
 				host: 'graph.facebook.com',
 				port: 443,
-				path: '/me?access_token=' + access_token
+				path: '/me/events?access_token=' + access_token
 			};
 			http.request(graphOptions, function(graphRes) {
 				var graphResult = '';
@@ -53,14 +54,33 @@ app.get('/test', function(request, response) {
 				});
 				graphRes.on('end', function() {
 					console.log('graph result ended, result is '+graphResult);
+					var events = JSON.parse(graphResult).data;
+					var eventsResponse = { 'events': [] };
 
-					response.send(graphResult);	
+					for(var i = 0; i < events.length; i++) {
+						eventsResponse['events'].push(events[i].id);
+					}
+					response.send(eventsResponse);	
 				});
 			}).end();
 		});
 	}).end();
 
 });
+
+function parseEventData(id, moreEvents) {
+	var eventReqOption = {
+		host: 'graph.facebook.com',
+		port: 443,
+		path: '/' + id + '?access_token=' + access_token
+	};
+	http.request(eventReqOption, function(response) {
+		var graphResult = '';
+		response.on('data', function(chunk) {
+
+		});
+	}).end();
+} 
 
 app.get('/fetch', function(req, res) {
 
