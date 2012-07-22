@@ -80,7 +80,7 @@ app.get('/event/:id', function(request, response) {
 	// FQL query
 	var fqlQueries = {
 		'rsvp_query': 'SELECT uid, rsvp_status FROM event_member WHERE eid=' + id,
-		'person_info_query': 'SELECT sex, birthday_date FROM user WHERE uid IN (SELECT uid FROM #rsvp_query WHERE rsvp_status = \'attending\')',
+		'person_info_query': 'SELECT sex, birthday_date, relationship_status FROM user WHERE uid IN (SELECT uid FROM #rsvp_query WHERE rsvp_status = \'attending\')',
 		'basic_info_query': 'SELECT name, start_time, location FROM event WHERE eid=' + id,
 		'mutuals_query': 'SELECT uid1, uid2 FROM friend WHERE uid1 = me() AND uid2 IN (SELECT uid FROM #rsvp_query WHERE rsvp_status = \'attending\')',
 		'my_info_query': 'SELECT birthday_date FROM user WHERE uid = me()'
@@ -102,7 +102,7 @@ app.get('/event/:id', function(request, response) {
 			var data = JSON.parse(result).data;
 
 			var name, time, location;
-			var attending = 0, maybe = 0, declined = 0, invited = 0, male = 0, female = 0, mutuals = 0, myAge;
+			var attending = 0, maybe = 0, declined = 0, invited = 0, male = 0, female = 0, mutuals = 0, numSingle = 0, myAge;
 			var ages = [];
 
 			for(var k = 0; k < data.length; k++) {
@@ -132,10 +132,14 @@ app.get('/event/:id', function(request, response) {
 							female++;
 						}
 
-
 						var age = calcAge(currUser['birthday_date']);
 						if(age !== null) {
 							ages.push(age);
+						}
+
+						var relationship = currUser['relationship_status'];
+						if(relationship !== null && relationship === 'Single') {
+							numSingle++;
 						}
 					}
 				} else if(currResultsName === 'basic_info_query') {
@@ -257,6 +261,18 @@ app.get('/event/:id', function(request, response) {
 						'id': 'noShow',
 						'name': 'No Show',
 						'description': Math.floor(declineRatio * 100) + '% of invitees have declined this event :('
+					});
+				}
+			}
+
+			// success kid (single)
+			if(invited !== 0) {
+				var singleRatio = numSingle / invited;
+				if(singleRatio > .5) {
+					badges.push({
+						'id': 'successKid',
+						'name': 'Success Kid',
+						'description': Math.floor(singleRatio * 100) + '% of invitees are single.'
 					});
 				}
 			}
