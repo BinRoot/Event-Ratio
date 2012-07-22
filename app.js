@@ -216,6 +216,34 @@ app.get('/event/:id', function(request, response) {
 				}
 			}
 
+			// intimate/rager
+			if(invited <= 15) {
+				badges.push({
+					'id': 'intimiateGathering',
+					'name': 'Intimiate Gathering',
+					'description': 'Sometimes you just gotta get away from the hubbub. There are only ' + invited + ' guests invited to this event.'
+				});
+			} else if(invited > 200) {
+				badges.push({
+					'id': 'rager',
+					'name': 'Rager',
+					'description': 'Get ready to rage! There are ' + invited + ' people invited to this event!'
+				});
+			}
+
+			// maybe
+			if(invited !== 0) {
+				var maybeRatio = maybe/invited;
+				if(maybeRatio > .5) {
+					badges.push({
+						'id': 'attendingMaybe',
+						'name': 'Attending Maybe?',
+						'description': 'Hey I just met you, and this is crazy... But here\'s my event, some come to it maybe? ' + maybeRatio + '% of those invited have responded with "Maybe."'
+					});
+				}
+			}
+
+
 			// send final result object
 			response.send({
 				'name': name,
